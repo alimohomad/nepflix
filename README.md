@@ -34,26 +34,55 @@ const CONFIG = {
 
 ## API Setup
 
-### Using the PHP API (Recommended)
+### Using the Node.js API (Recommended)
 
-1. Upload the `api` folder to your server at `nepflix.eu.cc/api/`
-
-2. Set your secret key in `api/update.php` and `api/visitors.php`:
-```php
-$secretKey = 'your-secret-key-here'; // Change this!
+1. Install dependencies:
+```bash
+cd api
+npm install
 ```
 
-3. Make sure `visitors.json` is writable:
+2. Set your secret key in `api/.env`:
 ```bash
-chmod 666 api/visitors.json
+cp .env.example .env
+# Edit .env: SECRET_KEY=your-secret-key-here
+```
+
+3. Start the API server:
+```bash
+npm start
 ```
 
 4. The API endpoints:
-   - **GET** `https://nepflix.eu.cc/api/` - Returns current target URL
-   - **GET** `https://nepflix.eu.cc/api/update.php?url=https://newsite.com&key=your-key` - Updates target
-   - **GET** `https://nepflix.eu.cc/api/visitors.php?action=count` - Get active visitor count
-   - **GET** `https://nepflix.eu.cc/api/visitors.php?action=list&key=your-key` - Get detailed visitor list
-   - **VIEW** `https://nepflix.eu.cc/api/dashboard.html` - Live traffic dashboard
+   - **GET** `http://localhost:3000/api/` - Returns current target URL
+   - **GET** `http://localhost:3000/api/update?url=https://newsite.com&key=your-key` - Updates target
+   - **GET** `http://localhost:3000/api/visitors?action=count` - Get active visitor count
+   - **GET** `http://localhost:3000/api/visitors?action=list&key=your-key` - Get detailed visitor list
+   - **VIEW** `http://localhost:3000/api/dashboard.html` - Live traffic dashboard
+
+### Production Deployment
+
+Deploy to any Node.js hosting platform:
+
+**Heroku:**
+```bash
+cd api
+heroku create nepflix-api
+git push heroku main
+```
+
+**Vercel/Railway/Render:**
+- Point to `api` folder
+- Set `SECRET_KEY` environment variable
+- Deploy
+
+**VPS with PM2:**
+```bash
+npm install -g pm2
+pm2 start api/server.js --name nepflix-api
+pm2 startup
+pm2 save
+```
 
 ### Visitor Tracking
 
@@ -66,7 +95,7 @@ The system automatically tracks live visitors in real-time:
 
 ### Live Traffic Dashboard
 
-Access the dashboard at: `https://nepflix.eu.cc/api/dashboard.html`
+Access the dashboard at: `http://localhost:3000/api/dashboard.html` (or your deployed URL)
 
 Features:
 - 👥 **Active Visitors** - Current live users
