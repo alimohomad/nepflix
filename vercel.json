@@ -1,35 +1,5 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/server.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "nepflix.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "api/dashboard.html",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/dashboard.html",
-      "dest": "/api/dashboard.html"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/server.js"
-    },
-    {
-      "src": "/",
-      "dest": "/nepflix.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/nepflix.html"
-    }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" }
   ]
 }
