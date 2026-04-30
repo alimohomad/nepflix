@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nepflix - Live Traffic Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+        }
+        
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        
+        .glow {
+            text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="mb-8 text-center">
+            <h1 class="text-4xl font-bold mb-2 glow">NEPFLIX LIVE TRAFFIC</h1>
+            <p class="text-gray-500 text-sm">Real-time visitor monitoring system</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Active Visitors -->
+            <div class="bg-gray-900 border border-green-500 rounded-lg p-6 text-center">
+                <div class="text-gray-400 text-sm mb-2">ACTIVE VISITORS</div>
+                <div id="visitor-count" class="text-6xl font-bold glow pulse">0</div>
+                <div class="text-gray-500 text-xs mt-2">Live now</div>
+            </div>
+
+            <!-- Peak Today -->
+            <div class="bg-gray-900 border border-blue-500 rounded-lg p-6 text-center">
+                <div class="text-gray-400 text-sm mb-2">PEAK TODAY</div>
+                <div id="peak-count" class="text-6xl font-bold text-blue-400">0</div>
+                <div class="text-gray-500 text-xs mt-2">Maximum concurrent</div>
+            </div>
+
+            <!-- Total Sessions -->
+            <div class="bg-gray-900 border border-purple-500 rounded-lg p-6 text-center">
+                <div class="text-gray-400 text-sm mb-2">TOTAL SESSIONS</div>
+                <div id="total-sessions" class="text-6xl font-bold text-purple-400">0</div>
+                <div class="text-gray-500 text-xs mt-2">Since last reset</div>
+            </div>
+        </div>
+
+        <!-- Visitor List -->
+        <div class="bg-gray-900 border border-green-500 rounded-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">ACTIVE SESSIONS</h2>
+                <div class="text-sm text-gray-500">Auto-refresh: <span id="countdown">3</span>s</div>
+            </div>
+            
+            <div id="visitor-list" class="space-y-2">
+                <div class="text-center text-gray-600 py-8">Loading visitor data...</div>
+            </div>
+        </div>
+
+        <!-- API Key Input -->
+        <div class="mt-6 bg-gray-900 border border-yellow-500 rounded-lg p-4">
+            <label class="text-sm text-gray-400 block mb-2">API KEY (for detailed view):</label>
+            <input 
+                type="password" 
+                id="api-key" 
+                placeholder="Enter your secret key..." 
+                class="w-full bg-black border border-gray-700 rounded px-4 py-2 text-green-400 focus:outline-none focus:border-green-500"
+            >
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://nepflix.eu.cc/api/visitors.php';
+        let peakVisitors = 0;
+        let totalSessions = 0;
+        let countdown = 3;
+
+        async function fetchVisitorData() {
+            const apiKey = document.getElementById('api-key').value;
+            
+            try {
+                let url = `${API_URL}?action=count&t=${Date.now()}`;
+                
+                // If API key provided, get detailed list
+                if (apiKey) {
+                    url = `${API_URL}?action=list&key=${apiKey}&t=${Date.now()}`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const count = data.activeVisitors;
+                    
+                    // Update active visitors
+                    document.getElementById('visitor-count').textContent = count;
+                    
+                    // Update peak
+                    if (count > peakVisitors) {
+                        peakVisitors = count;
+                        document.getElementById('peak-count').textContent = peakVisitors;
+                    }
+                    
+                    // Update total sessions (rough estimate)
+                    totalSessions = Math.max(totalSessions, count);
+                    document.getElementById('total-sessions').textContent = totalSessions;
+                    
+                    // Update visitor list if available
+                    if (data.visitors) {
+                        renderVisitorList(data.visitors);
+                    } else {
+                        document.getElementById('visitor-list').innerHTML = 
+                            '<div class="text-center text-gray-600 py-4">Enter API key to view detailed visitor list</div>';
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to fetch visitor data:', e);
+            }
+        }
+
+        function renderVisitorList(visitors) {
+            const container = document.getElementById('visitor-list');
+            
+            if (visitors.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-600 py-4">No active visitors</div>';
+                return;
+            }
+            
+            container.innerHTML = visitors.map((v, i) => `
+                <div class="flex items-center justify-between bg-black border border-gray-800 rounded p-3 text-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="text-green-400 font-bold">#${i + 1}</div>
+                        <div>
+                            <div class="text-gray-300">${v.id}</div>
+                            <div class="text-gray-600 text-xs">${v.ip}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-gray-400">${formatDuration(v.duration)}</div>
+                        <div class="text-gray-600 text-xs">Active ${v.lastActive}s ago</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatDuration(seconds) {
+            if (seconds < 60) return `${seconds}s`;
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes}m`;
+            const hours = Math.floor(minutes / 60);
+            return `${hours}h ${minutes % 60}m`;
+        }
+
+        function updateCountdown() {
+            countdown--;
+            document.getElementById('countdown').textContent = countdown;
+            
+            if (countdown <= 0) {
+                countdown = 3;
+                fetchVisitorData();
+            }
+        }
+
+        // Initial fetch
+        fetchVisitorData();
+
+        // Auto-refresh every 3 seconds
+        setInterval(fetchVisitorData, 3000);
+        setInterval(updateCountdown, 1000);
+
+        // Refresh when API key changes
+        document.getElementById('api-key').addEventListener('input', () => {
+            fetchVisitorData();
+        });
+    </script>
+</body>
+</html>
