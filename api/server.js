@@ -36,8 +36,8 @@ initFiles();
 // TARGET URL API
 // ========================================
 
-// GET /api/ - Returns current target URL
-app.get('/api/', (req, res) => {
+// GET / or /api/ - Returns current target URL
+app.get(['/', '/api/', '/api'], (req, res) => {
     try {
         const currentTarget = fs.readFileSync(TARGET_FILE, 'utf8').trim();
         
@@ -50,7 +50,7 @@ app.get('/api/', (req, res) => {
 });
 
 // GET /api/update - Updates target URL
-app.get('/api/update', (req, res) => {
+app.get(['/update', '/api/update'], (req, res) => {
     const { url, key } = req.query;
     const secretKey = process.env.SECRET_KEY || 'your-secret-key-here'; // Change this!
     
@@ -91,7 +91,7 @@ function cleanupVisitors(visitors) {
 }
 
 // GET /api/visitors - Visitor tracking endpoint
-app.get('/api/visitors', (req, res) => {
+app.get(['/visitors', '/api/visitors'], (req, res) => {
     const { action, id, key } = req.query;
     const currentTime = Math.floor(Date.now() / 1000);
     

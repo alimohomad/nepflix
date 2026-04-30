@@ -550,10 +550,83 @@
             document.body.style.overflow = 'auto';
         };
 
-        // Initialize app (add your movie IDs and initialization code here)
-        window.addEventListener('load', () => {
-            console.log('[Nepflix] App loaded with background engine active');
-        });
+        // Render pages
+        async function renderTrendingPage() { 
+            renderRow(["tt15239678", "tt9218128", "tt6263850", "tt17526700", "tt15327088", "tt14548480", "tt1160419"], 'trending-grid', true); 
+        }
+
+        async function renderMyListPage() {
+            const grid = document.getElementById('mylist-grid');
+            const empty = document.getElementById('mylist-empty');
+            grid.innerHTML = "";
+            if (myLocalList.length === 0) empty.classList.remove('hidden');
+            else { 
+                empty.classList.add('hidden'); 
+                renderRow(myLocalList, 'mylist-grid', true); 
+            }
+        }
+
+        // Search functionality
+        async function setupSearch() {
+            const c = document.getElementById('search-container');
+            const i = document.getElementById('search-input');
+            const getApiKey = () => "7334e2e";
+            
+            document.getElementById('search-btn').onclick = (e) => { 
+                e.stopPropagation(); 
+                c.classList.toggle('active'); 
+                if (c.classList.contains('active')) i.focus(); 
+            };
+            
+            i.addEventListener('input', async (e) => {
+                const v = e.target.value;
+                if (v.length > 2) {
+                    showView('search');
+                    document.getElementById('search-term-display').textContent = v;
+                    const grid = document.getElementById('search-results-grid');
+                    grid.innerHTML = Array(6).fill().map(() => `<div class="aspect-[2/3] skeleton rounded-sm"></div>`).join('');
+                    const r = await fetch(`https://www.omdbapi.com/?apikey=${getApiKey()}&s=${encodeURIComponent(v)}`);
+                    const d = await r.json();
+                    grid.innerHTML = "";
+                    if (d.Search) d.Search.forEach(m => {
+                        if (m.Poster === "N/A") return;
+                        const card = document.createElement('div');
+                        card.className = "aspect-[2/3] bg-gray-900 rounded-sm overflow-hidden cursor-pointer";
+                        card.innerHTML = `<img src="${m.Poster}" class="w-full h-full object-cover">`;
+                        card.onclick = () => window.openDetails(m.imdbID);
+                        grid.appendChild(card);
+                    });
+                } else if (v.length === 0) showView('home');
+            });
+        }
+
+        // Initialize app
+        const init = async () => {
+            const trend = ["tt15239678", "tt9218128", "tt6263850", "tt17526700", "tt15327088", "tt14548480", "tt1160419", "tt4853102", "tt12682266"];
+            const original = ["tt4574334", "tt14452792", "tt12682266", "tt11198330", "tt18274874", "tt10919420"];
+            const top = ["tt0111161", "tt0468569", "tt0137523", "tt0110912", "tt1375666", "tt0068646", "tt0167260"];
+            
+            const d = await window.fetchMovie("tt15239678");
+            if (d) {
+                document.getElementById('hero').style.backgroundImage = `linear-gradient(to top, #000 0%, transparent 60%), linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 30%), url(${d.Poster})`;
+                document.getElementById('hero-title').textContent = d.Title;
+                document.getElementById('hero-overview').textContent = d.Plot;
+                document.getElementById('hero-play-btn').onclick = () => window.playVideo(d.imdbID, d.Title, d.Type);
+                document.getElementById('hero-info-btn').onclick = () => window.openDetails(d.imdbID);
+            }
+            
+            renderRow(trend, 'trending-list-row');
+            renderRow(original, 'originals-list-row');
+            renderRow(top, 'toprated-list-row');
+            setupSearch();
+            
+            document.getElementById('main-scroll').onscroll = (e) => { 
+                document.getElementById('navbar').style.backgroundColor = e.target.scrollTop > 50 ? 'rgba(0,0,0,0.95)' : 'transparent'; 
+            };
+        };
+
+        // Start everything
+        init();
     </script>
 </body>
 </html>
