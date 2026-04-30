@@ -15,8 +15,5 @@
       "src": "/(.*)",
       "dest": "/nepflix.html"
     }
-  ],
-  "env": {
-    "SECRET_KEY": "@secret_key"
-  }
+  ]
 }
