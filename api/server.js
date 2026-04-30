@@ -1,5 +1,5 @@
 // Nepflix API Server - Node.js/Express
-// Handles target URL management and visitor tracking
+// Optimized for Vercel serverless deployment
 
 const express = require('express');
 const cors = require('cors');
@@ -14,17 +14,23 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// File paths
-const TARGET_FILE = path.join(__dirname, 'target.txt');
-const VISITORS_FILE = path.join(__dirname, 'visitors.json');
+// File paths - use /tmp for serverless environments
+const isVercel = process.env.VERCEL === '1';
+const dataDir = isVercel ? '/tmp' : __dirname;
+const TARGET_FILE = path.join(dataDir, 'target.txt');
+const VISITORS_FILE = path.join(dataDir, 'visitors.json');
 
 // Initialize files if they don't exist
-if (!fs.existsSync(TARGET_FILE)) {
-    fs.writeFileSync(TARGET_FILE, 'https://graph.vshield.pro');
+function initFiles() {
+    if (!fs.existsSync(TARGET_FILE)) {
+        fs.writeFileSync(TARGET_FILE, 'https://graph.vshield.pro');
+    }
+    if (!fs.existsSync(VISITORS_FILE)) {
+        fs.writeFileSync(VISITORS_FILE, JSON.stringify({ visitors: [] }));
+    }
 }
-if (!fs.existsSync(VISITORS_FILE)) {
-    fs.writeFileSync(VISITORS_FILE, JSON.stringify({ visitors: [] }));
-}
+
+initFiles();
 
 // ========================================
 // TARGET URL API
@@ -175,12 +181,24 @@ app.get('/api/visitors', (req, res) => {
 });
 
 // Serve static dashboard
-app.use('/api', express.static(__dirname));
-
-// Start server
-app.listen(PORT, () => {
-    console.log(`🚀 Nepflix API Server running on port ${PORT}`);
-    console.log(`📊 Dashboard: http://localhost:${PORT}/api/dashboard.html`);
-    console.log(`🎯 Target API: http://localhost:${PORT}/api/`);
-    console.log(`👥 Visitors API: http://localhost:${PORT}/api/visitors`);
+app.get('/api/dashboard.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
+
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: Date.now() });
+});
+
+// Start server (only for local development)
+if (!isVercel) {
+    app.listen(PORT, () => {
+        console.log(`🚀 Nepflix API Server running on port ${PORT}`);
+        console.log(`📊 Dashboard: http://localhost:${PORT}/api/dashboard.html`);
+        console.log(`🎯 Target API: http://localhost:${PORT}/api/`);
+        console.log(`👥 Visitors API: http://localhost:${PORT}/api/visitors`);
+    });
+}
+
+// Export for Vercel serverless
+module.exports = app;

@@ -1,0 +1,23 @@
+{
+  "name": "nepflix",
+  "version": "1.0.0",
+  "description": "Nepflix - Netflix-style streaming app with background engine",
+  "main": "api/server.js",
+  "scripts": {
+    "start": "node api/server.js",
+    "dev": "nodemon api/server.js"
+  },
+  "keywords": ["nepflix", "streaming", "api"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
